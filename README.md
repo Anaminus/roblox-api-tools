@@ -1,4 +1,4 @@
-## ParserRbxAPI
+## ParseRbxAPI
 
 An API dump file is created when RobloxPlayer.exe is run using the following options:
 
