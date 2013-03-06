@@ -27,7 +27,7 @@ It returns a table containing the parsed data. Here's an example:
 
 The returned table is a list of "items", which are tables. All items contain the following fields:
 - *string* **type**  The type of item. Used to indicate what other fields are available in the item.
-- *table* **tags**   A list of tags attached to the item. Each tag is a string.
+- *table* **tags**   A set of tags attached to the item. Each entry is a `["tagname"]=true` pair.
 
 Each item has a specific type with its own additional fields:
 
