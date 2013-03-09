@@ -131,11 +131,11 @@ local mE = '[%w_ ]+' -- enum item name
 
 -- Parses an item's tags (stuff in square brackets)
 local function ParseTags(item,tags)
-	local tagList = {}
+	local tagSet = {}
 	for tag in tags:gmatch("%[(.-)%]") do
-		tagList[#tagList+1] = tag
+		tagSet[tag] = true
 	end
-	item.tags = tagList
+	item.tags = tagSet
 end
 
 --  Parses comma-separated arguments/parameters
