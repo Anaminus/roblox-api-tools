@@ -1,4 +1,4 @@
-## ParseRbxAPI
+## Roblox API Dump
 
 An API dump file is created when a Roblox executable is run using the
 following options:
@@ -8,27 +8,39 @@ following options:
 
 These dump the API to a file named `api.txt`.
 
-The purpose of this module is to parse the contents of the dump file to a Lua
-table, so that it may be manipulated more easily.
+This repo contains Lua functions for parsing the contents of the dump into a
+Lua table, so that it may be manipulated more easily.
 
+The first function, ParseAPI, uses regular expressions for parsing. It is
+small and fast, but will crash and burn if the contents of the dump are
+malformed. It is pretty much safe to use on an unmodified dump file taken
+directly from the Roblox exe.
+
+In comparison, the second function, LexAPI, is larger and slower, but
+significantly more accurate. If the dump is malformed in any way, this
+function will tell you the exact location of the error, down to the character.
+Use this if you're making modifications to the dump file, and need to verify
+that it is correct.
 
 ### Usage
 
-The ParseRbxAPI function expects a string, which is the contents of the dump
-file. It returns a table containing the parsed data. Here's an example:
+Both functions expect a string, which is the contents of the dump file. They
+both return a table containing the parsed data, in the exact same format.
+Here's an example:
 
-    local ParseRbxAPI = require 'ParseRbxAPI'
+    local ParseAPI = require 'ParseAPI'
 
     local f = io.open('api.txt')
     local data = f:read('*a')
     f:close()
 
-    local database = ParseRbxAPI(data)
+    local database = ParseAPI(data)
 
 
 ### Table Contents
 
-The returned table is a list of "items", which are tables. All items contain the following fields:
+The returned table is a list of "items", which are tables. All items contain
+the following fields:
 
 - *string* **type**: The type of item. Used to indicate what other fields are available in the item.
 - *table* **tags**:  A set of tags attached to the item. Each entry is a `["tagname"]=true` pair.
