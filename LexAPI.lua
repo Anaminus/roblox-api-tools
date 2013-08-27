@@ -264,6 +264,8 @@ return function(data)
 				tags[data:sub(s,i-1)] = true
 				i = i + 1
 				white()
+			elseif i > #data then
+				break
 			elseif not open then
 				lnerror("unexpected character between tags",4)
 			else
