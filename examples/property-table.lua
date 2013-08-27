@@ -15,7 +15,7 @@ Return a table of properties and their value types, per class.
 local function getProperties(path)
 	local dump do
 		local f = io.open(path)
-		dump = require 'ParseRbxAPI' (f:read('*a'))
+		dump = require 'ParseAPI' (f:read('*a'))
 		f:close()
 	end
 	local propertySet = {}
