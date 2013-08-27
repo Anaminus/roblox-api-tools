@@ -125,7 +125,7 @@ Table:
 
 -- how to match various names
 local mC = '%S+'     -- class name
-local mM = '%w+'     -- member name
+local mM = '[%w_ ]+' -- member name
 local mT = '%S+'     -- value type
 local mE = '[%w_ ]+' -- enum item name
 
