@@ -1,18 +1,21 @@
 ## ParseRbxAPI
 
-An API dump file is created when RobloxPlayer.exe is run using the following options:
+An API dump file is created when a Roblox executable is run using the
+following options:
 
     RobloxPlayer -API api.txt
+    RobloxPlayerBeta --API api.txt
 
-This dumps the API to a file named `api.txt`.
+These dump the API to a file named `api.txt`.
 
-The purpose of this module is to parse the contents of the dump file to a Lua table, so that it may be manipulated more easily.
+The purpose of this module is to parse the contents of the dump file to a Lua
+table, so that it may be manipulated more easily.
 
 
 ### Usage
 
-The ParseRbxAPI function expects a string, which is the contents of the dump file.
-It returns a table containing the parsed data. Here's an example:
+The ParseRbxAPI function expects a string, which is the contents of the dump
+file. It returns a table containing the parsed data. Here's an example:
 
     local ParseRbxAPI = require 'ParseRbxAPI'
 
@@ -26,8 +29,9 @@ It returns a table containing the parsed data. Here's an example:
 ### Table Contents
 
 The returned table is a list of "items", which are tables. All items contain the following fields:
-- *string* **type**  The type of item. Used to indicate what other fields are available in the item.
-- *table* **tags**   A set of tags attached to the item. Each entry is a `["tagname"]=true` pair.
+
+- *string* **type**: The type of item. Used to indicate what other fields are available in the item.
+- *table* **tags**:  A set of tags attached to the item. Each entry is a `["tagname"]=true` pair.
 
 Each item has a specific type with its own additional fields:
 
@@ -72,7 +76,7 @@ Each item has a specific type with its own additional fields:
 - **EnumItem**
 	- *string* **Enum**:         The enum this item is a member of.
 	- *string* **Name**:         The name associated with the enum item.
-	- *int* **Value**;           The enum item's integer value.
+	- *int* **Value**:           The enum item's integer value.
 
 
 ### Example
