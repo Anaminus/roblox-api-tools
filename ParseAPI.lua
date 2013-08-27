@@ -1,6 +1,6 @@
 --[[
 
-# ParseRbxAPI
+# ParseAPI
 
 An API dump file is created when a Roblox executable is run using the
 following options:
@@ -16,20 +16,20 @@ table, so that it may be manipulated more easily.
 
 ## Usage
 
-The ParseRbxAPI function expects a string, which is the contents of the dump
+The ParseAPI function expects a string, which is the contents of the dump
 file. It returns a table containing the parsed data. Here's an example:
 
-	local ParseRbxAPI = require 'ParseRbxAPI'
+	local ParseAPI = require 'ParseAPI'
 
 	local f = io.open('api.txt')
 	local data = f:read('*a')
 	f:close()
 
-	local database = ParseRbxAPI(data)
+	local database = ParseAPI(data)
 
 ## More Info
 
-https://github.com/Anaminus/roblox-api-dump-parser
+https://github.com/Anaminus/roblox-api-dump
 
 ]]
 
