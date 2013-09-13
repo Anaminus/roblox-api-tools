@@ -34,10 +34,10 @@ https://github.com/Anaminus/roblox-api-dump
 ]]
 
 -- how to match various names
-local mC = '%S+'     -- class name
-local mM = '[%w_ ]+' -- member name
-local mT = '%S+'     -- value type
-local mE = '[%w_ ]+' -- enum item name
+local mC = '[%w_<> ]*[%w_<>]' -- class name
+local mM = '[%w_ ]*[%w_]'     -- member name
+local mT = '[%w_]+'           -- value type
+local mE = '[%w_ ]*[%w_]'     -- enum item name
 
 -- Parses an item's tags (stuff in square brackets)
 local function ParseTags(item,tags)
