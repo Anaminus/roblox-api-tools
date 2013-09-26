@@ -110,7 +110,7 @@ Table:
     	};
     	{
     		type = "Property";
-    		tags = {"readonly", "RobloxPlaceSecurity"};
+    		tags = {readonly = true, RobloxPlaceSecurity = true};
     		Name = "DataCost";
     		Class = "Instance";
     		ValueType = "int";
