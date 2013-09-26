@@ -7,7 +7,7 @@ following options:
     RobloxPlayerBeta --API api.txt
 
 These dump the API to a file named `api.txt`. Note that Studio does not 
-currently support this paramater. However, the ReflectionMetadata.xml file is 
+currently support this command. However, the ReflectionMetadata.xml file is 
 required to generate the dump (otherwise a parsing error is reported), but is 
 currently only distributed with studio and needs to be copied to 
 RobloxPlayerBeta.exe's folder.
