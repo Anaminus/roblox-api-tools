@@ -7,10 +7,11 @@ following options:
     RobloxPlayerBeta --API api.txt
 
 These dump the API to a file named `api.txt`. Note that Studio does not
-currently support this command. However, the ReflectionMetadata.xml file is
-required to generate the dump (otherwise a parsing error is reported), but is
-currently only distributed with studio and needs to be copied to
-RobloxPlayerBeta.exe's folder.
+currently support this command.
+
+Some information in the API dump is taken from the `ReflectionMetadata.xml`
+file. As a consequence, this file must be present in order to generate the
+dump.
 
 This repo contains Lua functions for parsing the contents of the dump into a
 Lua table, so that it may be manipulated more easily.
