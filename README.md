@@ -13,8 +13,12 @@ Some information in the API dump is taken from the `ReflectionMetadata.xml`
 file. As a consequence, this file must be present in order to generate the
 dump.
 
-This repo contains Lua functions for parsing the contents of the dump into a
-Lua table, so that it may be manipulated more easily.
+This repo contains Lua functions for handling the API dump in various ways.
+
+### ParseAPI and LexAPI
+
+These two functions are used for parsing the contents of the dump into a Lua
+table, so that it may be manipulated more easily.
 
 The first function, ParseAPI, uses regular expressions for parsing. It is
 small and fast, but will crash and burn if the contents of the dump are
@@ -27,7 +31,7 @@ function will tell you the exact location of the error, down to the character.
 Use this if you're making modifications to the dump file, and need to verify
 that it is correct.
 
-### Usage
+#### Usage
 
 Both functions expect a string, which is the contents of the dump file. They
 both return a table containing the parsed data, in the exact same format.
@@ -41,101 +45,45 @@ Here's an example:
 
     local database = ParseAPI(data)
 
+#### More Info
 
-### Table Contents
+See the [API dump format][wikiDumpFormat] page for information about the returned
+table.
 
-The returned table is a list of "items", which are tables. All items contain
-the following fields:
+### FetchAPI
 
-- *string* **type**: The type of item. Used to indicate what other fields are available in the item.
-- *table* **tags**:  A set of tags attached to the item. Each entry is a `["tagname"]=true` pair.
+This function is used to retrieve Roblox API data directly from the Roblox
+website.
 
-Each item has a specific type with its own additional fields:
+#### Usage
 
-- **Class**
-	- *string* **Name**:         The name of the class.
-	- *string* **Superclass**:   The class this class inherits from. Will be nil if the class does not inherit.
-- **Property**
-	- *string* **Name**:         The name of the member.
-	- *string* **Class** :       The class this item is a member of.
-	- *string* **ValueType**:    The type of the property's value.
-- **Function**
-	- *string* **Name**:         The name of the member.
-	- *string* **Class**:        The class this item is a member of.
-	- *string* **ReturnType**:   The type of the value returned by the function.
-	- *table* **Arguments**:     A list of arguments passed to the function. Each argument is a table containing the following fields:
-		- *string* **Name**:     The name of the argument.
-		- *string* **Type**:     The value type of the argument.
-		- *string* **Default**:  The default value if the argument is not given. Will be nil if the argument does not have default value.
-- **Event**
-	- *string* **Name**:         The name of the member.
-	- *string* **Class**:        The class this item is a member of.
-	- *table* **Parameters**:    A list of parameters received by the event listener. Each parameter is a table containing the following fields:
-		- *string* **Name**:     The name of the parameter.
-		- *string* **Type**:     The value type of the parameter.
-- **Callback**
-	- *string* **Name**:         The name of the member.
-	- *string* **Class**:        The class this item is a member of.
-	- *string* **ReturnType**:   The type of the value that should be returned by the callback.
-	- *table* **Parameters**:    A list of parameters received by the callback. Each parameter is a table containing the following fields:
-		- *string* **Name**:     The name of the parameter.
-		- *string* **Type**:     The value type of the parameter.
-- **YieldFunction**
-	- *string* **Name**:         The name of the member.
-	- *string* **Class**:        The class this item is a member of.
-	- *string* **ReturnType**:   The type of the value returned by the function.
-	- *table* **Arguments**:     A list of arguments passed to the function. Each argument is a table containing the following fields:
-		- *string* **Name**:     The name of the argument.
-		- *string* **Type**:     The value type of the argument.
-		- *string* **Default**:  The default value if the argument is not given. Will be nil if the argument does not have default value.
-- **Enum**
-	- *string* **Name**:         The name of the enum.
-- **EnumItem**
-	- *string* **Enum**:         The enum this item is a member of.
-	- *string* **Name**:         The name associated with the enum item.
-	- *int* **Value**:           The enum item's integer value.
+The FetchAPI function has two optional arguments: The version hash of
+RobloxPlayer, and the version hash of RobloxStudio. If an argument is omitted,
+then the latest version will be retrieved from the website and used instead.
+
+Returns three values:
+- The parsed API dump string
+- A table of class names and their corresponding explorer image indexes
+- The path to the RobloxPlayer executable that was used to get the data
+
+#### Dependencies
+
+FetchAPI depends on the following libraries:
+
+- [LuaFileSystem][lfs]
+- [LuaSocket][lsocket]
+- [LuaZip][lzip]
+- [LexAPI][lex]
+
+#### More Info
+
+See the [FetchAPI][wikiFetchAPI] page for information about how FetchAPI
+works.
 
 
-### Example
-
-Dump:
-
-    Class Instance : Root
-    	Property int Instance.DataCost [readonly] [RobloxPlaceSecurity]
-    	Function Instance Instance:FindFirstChild(string name, bool recursive = false)
-
-Table:
-
-    return {
-    	{
-    		type = "Class";
-    		tags = {};
-    		Name = "Instance";
-    		Superclass = "Root";
-    	};
-    	{
-    		type = "Property";
-    		tags = {readonly = true, RobloxPlaceSecurity = true};
-    		Name = "DataCost";
-    		Class = "Instance";
-    		ValueType = "int";
-    	};
-    	{
-    		type = "Function";
-    		tags = {};
-    		Name = "FindFirstChild";
-    		Class = "Instance";
-    		ReturnType = "Instance";
-    		Arguments = {
-    			{
-    				Name = "name";
-    				Type = "string";
-    			};
-    			{
-    				Name = "recursive";
-    				Type = "bool";
-    				Default = "false";
-    			};
-    		};
-    	};
-    }
+[wikiDumpFormat]: https://github.com/Anaminus/roblox-api-dump/wiki/API-dump-format
+[wikiFetchAPI]: https://github.com/Anaminus/roblox-api-dump/wiki/API-dump-format
+[lfs]: http://keplerproject.github.io/luafilesystem/
+[lsocket]: http://w3.impa.br/%7Ediego/software/luasocket/
+[lzip]: http://www.keplerproject.org/luazip/
+[lex]: https://github.com/Anaminus/roblox-api-dump/blob/master/LexAPI.lua
