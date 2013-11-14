@@ -1,4 +1,4 @@
-## Roblox API Dump
+# Roblox API Dump
 
 An API dump file is created when a Roblox executable is run using the
 following options:
@@ -15,7 +15,7 @@ dump.
 
 This repo contains Lua functions for handling the API dump in various ways.
 
-### ParseAPI and LexAPI
+## ParseAPI and LexAPI
 
 These two functions are used for parsing the contents of the dump into a Lua
 table, so that it may be manipulated more easily.
@@ -31,7 +31,7 @@ function will tell you the exact location of the error, down to the character.
 Use this if you're making modifications to the dump file, and need to verify
 that it is correct.
 
-#### Usage
+### Usage
 
 Both functions expect a string, which is the contents of the dump file. They
 both return a table containing the parsed data, in the exact same format.
@@ -45,17 +45,17 @@ Here's an example:
 
     local database = ParseAPI(data)
 
-#### More Info
+### More Info
 
 See the [API dump format][wikiDumpFormat] page for information about the returned
 table.
 
-### FetchAPI
+## FetchAPI
 
 This function is used to retrieve Roblox API data directly from the Roblox
 website.
 
-#### Usage
+### Usage
 
 The FetchAPI function has two optional arguments: The version hash of
 RobloxPlayer, and the version hash of RobloxStudio. If an argument is omitted,
@@ -66,7 +66,7 @@ Returns three values:
 - A table of class names and their corresponding explorer image indexes
 - The path to the RobloxPlayer executable that was used to get the data
 
-#### Dependencies
+### Dependencies
 
 FetchAPI depends on the following libraries:
 
@@ -75,7 +75,7 @@ FetchAPI depends on the following libraries:
 - [LuaZip][lzip]
 - [LexAPI][lex]
 
-#### More Info
+### More Info
 
 See the [FetchAPI][wikiFetchAPI] page for information about how FetchAPI
 works.
