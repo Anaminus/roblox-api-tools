@@ -66,6 +66,15 @@ Returns three values:
 - A table of class names and their corresponding explorer image indexes
 - The path to the RobloxPlayer executable that was used to get the data
 
+Example:
+
+	local FetchAPI = require 'FetchAPI'
+
+	local playerVersion = 'version-01a2b3c4d5e6f789'
+	local studioVersion = 'version-98f7e6d5c4b3a210'
+
+	local dump, explorerIndex, exe = FetchAPI(playerVersion, studioVersion)
+
 ### Dependencies
 
 FetchAPI depends on the following libraries:
