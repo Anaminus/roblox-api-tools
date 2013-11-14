@@ -82,7 +82,7 @@ works.
 
 
 [wikiDumpFormat]: https://github.com/Anaminus/roblox-api-dump/wiki/API-dump-format
-[wikiFetchAPI]: https://github.com/Anaminus/roblox-api-dump/wiki/API-dump-format
+[wikiFetchAPI]: https://github.com/Anaminus/roblox-api-dump/wiki/FetchAPI
 [lfs]: http://keplerproject.github.io/luafilesystem/
 [lsocket]: http://w3.impa.br/%7Ediego/software/luasocket/
 [lzip]: http://www.keplerproject.org/luazip/
