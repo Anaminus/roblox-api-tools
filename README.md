@@ -62,7 +62,7 @@ RobloxPlayer, and the version hash of RobloxStudio. If an argument is omitted,
 then the latest version will be retrieved from the website and used instead.
 
 Returns three values:
-- The parsed API dump string
+- The unparsed API dump string
 - A table of class names and their corresponding explorer image indexes
 - The path to the RobloxPlayer executable that was used to get the data
 
@@ -73,7 +73,6 @@ FetchAPI depends on the following libraries:
 - [LuaFileSystem][lfs]
 - [LuaSocket][lsocket]
 - [LuaZip][lzip]
-- [LexAPI][lex]
 
 ### More Info
 
@@ -86,4 +85,3 @@ works.
 [lfs]: http://keplerproject.github.io/luafilesystem/
 [lsocket]: http://w3.impa.br/%7Ediego/software/luasocket/
 [lzip]: http://www.keplerproject.org/luazip/
-[lex]: https://github.com/Anaminus/roblox-api-dump/blob/master/LexAPI.lua

@@ -18,7 +18,7 @@ A version hash takes the form of:
 where `<hash>` is a 16 digit hexidecimal number.
 
 Returns three values:
-- The parsed API dump string
+- The unparsed API dump string
 - A table of class names and their corresponding explorer image indexes
 - The path to the RobloxPlayer executable that was used to get the data
 
@@ -27,7 +27,6 @@ Returns three values:
 - LuaFileSystem
 - LuaSocket
 - LuaZip
-- LexAPI
 
 ## More Info
 
@@ -143,7 +142,7 @@ local function getLocalSource(rbxPlayerDir,rbxStudioDir)
 		end
 	end
 
-	return require('LexAPI')(apiDump), explorerIndex, path(rbxPlayerDir,'RobloxPlayerBeta.exe')
+	return apiDump, explorerIndex, path(rbxPlayerDir,'RobloxPlayerBeta.exe')
 end
 
 --[[
