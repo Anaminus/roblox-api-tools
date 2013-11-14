@@ -61,6 +61,9 @@ The FetchAPI function has two optional arguments: The version hash of
 RobloxPlayer, and the version hash of RobloxStudio. If an argument is omitted,
 then the latest version will be retrieved from the website and used instead.
 
+*The studio must be fetched in order to get the `ReflectionMetadata.xml` file,
+which is required, but not present in the RobloxPlayer build.*
+
 Returns three values:
 - The unparsed API dump string
 - A table of class names and their corresponding explorer image indexes
