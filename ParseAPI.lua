@@ -48,7 +48,7 @@ local function ParseTags(item,tags)
 	item.tags = tagSet
 end
 
---  Parses comma-separated arguments/parameters
+--  Parses comma-separated arguments
 local function ParseArguments(out,data)
 	if #data > 2 then
 		for arg in data:sub(2,-2):gmatch("[^,]+") do -- make this better
@@ -112,29 +112,29 @@ local ParseItem = {
 		return item
 	end;
 	Event = function(data)
-		local className,memberName,paramData,tags
+		local className,memberName,argData,tags
 		= data:match("^("..mC..")%.("..mM..")(%b())(.*)$")
 
 		local item = {
 			Class = className;
 			Name = memberName;
-			Parameters = {};
+			Arguments = {};
 		}
-		ParseArguments(item.Parameters,paramData)
+		ParseArguments(item.Arguments,argData)
 		ParseTags(item,tags)
 		return item
 	end;
 	Callback = function(data)
-		local returnType,className,memberName,paramData,tags
+		local returnType,className,memberName,argData,tags
 		= data:match("^("..mT..") ("..mC..")%.("..mM..")(%b())(.*)$")
 
 		local item = {
 			Class = className;
 			Name = memberName;
 			ReturnType = returnType;
-			Parameters = {};
+			Arguments = {};
 		}
-		ParseArguments(item.Parameters,paramData)
+		ParseArguments(item.Arguments,argData)
 		ParseTags(item,tags)
 		return item
 	end;
