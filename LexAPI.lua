@@ -211,12 +211,12 @@ return function(data)
 
 	-- A single argument consists of a type, a name, and a default value,
 	-- optionally.
-	local function parseArgument(arg)
+	local function parseArgument(hasDefault)
 		local argument = {}
 		argument.Type = lnassert(lexType(),"argument type expected",6)
 		white()
 		argument.Name = lnassert(lexWord(),"argument name expected",6)
-		if arg then
+		if hasDefault then
 			white()
 			if is'=' then
 				i = i + 1
@@ -229,18 +229,18 @@ return function(data)
 
 	-- A list of arguments consists of 0 or more comma-separated arguments
 	-- enclosed in parentheses.
-	local function parseArguments(arg)
+	local function parseArguments(hasDefault)
 		expect('(',5)
 		local arguments = {}
 		if is')' then
 			i = i + 1
 		else
 			white()
-			arguments[#arguments+1] = parseArgument(arg)
+			arguments[#arguments+1] = parseArgument(hasDefault)
 			while is',' do
 				i = i + 1
 				white()
-				arguments[#arguments+1] = parseArgument(arg)
+				arguments[#arguments+1] = parseArgument(hasDefault)
 			end
 			expect(')',5)
 		end
