@@ -323,7 +323,7 @@ return function(data)
 			item.Class = lnassert(lexName(),"class name expected",4)
 			expect('.',4)
 			item.Name = lnassert(lexName(),"event name expected",4)
-			item.Parameters = parseArguments(false)
+			item.Arguments = parseArguments(false)
 			return item
 		end;
 		['Callback'] = function()
@@ -333,7 +333,7 @@ return function(data)
 			item.Class = lnassert(lexName(),"class name expected",4)
 			expect('.',4)
 			item.Name = lnassert(lexName(),"callback name expected",4)
-			item.Parameters = parseArguments(false)
+			item.Arguments = parseArguments(false)
 			return item
 		end;
 		['Enum'] = function()
