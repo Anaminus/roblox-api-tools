@@ -94,8 +94,29 @@ FetchAPI depends on the following libraries:
 See the [FetchAPI][wikiFetchAPI] page for information about how FetchAPI
 works.
 
+## DiffAPI
+
+This function is used to get the difference between to API dumps.
+
+### Usage
+
+The DiffAPI receives two API dumps (returned from ParseAPI or LexAPI) as
+arguments. It returns a list of differences between the two dumps. Example:
+
+	local DiffAPI = require 'DiffAPI'
+
+	local oldDump = LexAPI(oldSource)
+	local newDump = LexAPI(newSource)
+
+	local diff = DiffAPI(oldDump, newDump)
+
+### More Info
+
+See the [API diff format][wikiDiffFormat] page for information about the returned
+table.
 
 [wikiDumpFormat]: https://github.com/Anaminus/roblox-api-dump/wiki/API-dump-format
+[wikiDiffFormat]: https://github.com/Anaminus/roblox-api-dump/wiki/API-diff-format
 [wikiFetchAPI]: https://github.com/Anaminus/roblox-api-dump/wiki/FetchAPI
 [lfs]: http://keplerproject.github.io/luafilesystem/
 [lsocket]: http://w3.impa.br/%7Ediego/software/luasocket/
