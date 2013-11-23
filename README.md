@@ -31,6 +31,9 @@ function will tell you the exact location of the error, down to the character.
 Use this if you're making modifications to the dump file, and need to verify
 that it is correct.
 
+LexAPI could also be considered a generic implementation, which may be
+portable into other languages fairly easily.
+
 ### Usage
 
 Both functions expect a string, which is the contents of the dump file. They
