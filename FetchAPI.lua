@@ -2,45 +2,48 @@
 
 # FetchAPI
 
-This module is used to retrieve Roblox API data directly from the Roblox
+This module is used to retrieve ROBLOX API data directly from the ROBLOX
 website.
 
 ## Usage
 
-The FetchAPI function has two optional arguments: The version hash of
-RobloxPlayer, and the version hash of RobloxStudio. If an argument is omitted,
-then the latest version will be retrieved from the website and used instead.
-
-A version hash takes the form of:
+The FetchAPI function retrieves a ROBLOX build from a version hash. This is a
+string that takes the form of:
 
 	version-<hash>
 
-where `<hash>` is a 16 digit hexidecimal number.
+Where `<hash>` is some 16-digit hexidecimal number.
+
+If no arguments are passed, FetchAPI will retrieve data for the latest version
+of the ROBLOX client.
+
+If one argument is passed, then the argument is the version hash of a specific
+client build to retrieve. Depending on the build, it may be necessary to
+supply the version hash of a related studio build as a second argument.
 
 Returns three values:
-- The unparsed API dump string
+- An unparsed API dump string
 - A table of class names and their corresponding explorer image indexes
-- The path to the RobloxPlayer executable that was used to get the data
+- The path to the ROBLOX client executable that was used to get the data
 
-Example:
+## Example
 
 	local FetchAPI = require 'FetchAPI'
 
-	local playerVersion = 'version-01a2b3c4d5e6f789'
-	local studioVersion = 'version-98f7e6d5c4b3a210'
+	-- RobloxApp build
+	local dump, explorerIndex, exe = FetchAPI('version-87de5333d4254860')
 
-	local dump, explorerIndex, exe = FetchAPI(playerVersion, studioVersion)
+	-- RobloxPlayer build
+	local dump, explorerIndex, exe = FetchAPI('version-38293b7e060d4866')
 
-## Dependencies
+	-- RobloxPlayerBeta build
+	local dump, explorerIndex, exe = FetchAPI('version-12cd4783f01a48cf')
 
-- LuaFileSystem
-- LuaSocket
-- LuaZip
-
-## More Info
-
-https://github.com/Anaminus/roblox-api-dump
-
+	-- Studio-required build
+	local dump, explorerIndex, exe = FetchAPI(
+		'version-19c5d0ac8e9b47c4',
+		'version-e8936cd10a7748e5'
+	)
 ]]
 
 -- Combines arguments into a path, and normalizes
@@ -51,6 +54,20 @@ local function path(...)
 		p = p .. '/' .. a[i]
 	end
 	return p:gsub('[\\/]+','/')
+end
+
+local baseURL = 'roblox.com'
+local setupURL = 'http://setup.' .. baseURL .. '/'
+local tmpDir = path(os.getenv('TEMP'),'lua-get-cache/')
+local dumpName = 'api.dmp'
+
+local function mkdir(...)
+	local lfs = require 'lfs'
+	local s,err = lfs.mkdir(...)
+	if not s and not err:match('File exists') then
+		return s,err
+	end
+	return true
 end
 
 -- open a file, creating directories as necessary
@@ -67,80 +84,238 @@ local function dopen(name,...)
 			return f
 		elseif m:match('No such file or directory') then
 			dir = dir .. (i==1 and '' or '/') .. list[i]
-			lfs.mkdir(dir)
+			local s,err = mkdir(dir)
+			if not s then return s,err end
 		else
 			return nil,m
 		end
 	end
-	return nil,"could not open file"
+	return nil,"Could not open file"
 end
 
--- Returns a directory of a Roblox installation.
--- `type`: "player" or "studio"
--- Implementation is OS dependent.
-local function getRobloxDir(type)
-	-- Windows 7 64-bit
-	local lfs = require 'lfs'
-	local versions = 'C:/Program Files (x86)/Roblox/Versions/'
-	for dir in lfs.dir(versions) do
-		local version = path(versions,dir)
-		if dir ~= '.' and dir ~= '..' and lfs.attributes(version, 'mode') == 'directory' then
-			local exe = type == 'studio' and 'RobloxStudioBeta.exe' or 'RobloxPlayerBeta.exe'
-			local f = io.open(path(version,exe),'rb')
-			if f then
-				f:close()
-				return version
+local function exists(filename)
+	return not not lfs.attributes(filename)
+end
+
+
+
+local function filter(msg,b,s,h,l)
+	if b == nil then
+		return b,s
+	end
+	if s ~= 200 then
+		return nil,msg
+	end
+	return b,s,h,l
+end
+
+local function readManifest(ver)
+	local http = require 'socket.http'
+	local ltn12 = require 'ltn12'
+	local filename = path(tmpDir,ver,'rbxManifest.txt')
+	local f,err = io.open(filename,'rb')
+	if not f then
+		local b,s = filter(
+			"Failed to get manifest from `" .. setupURL .. ver .. "-rbxManifest.txt`",
+			http.request{
+				url = setupURL .. ver .. '-rbxManifest.txt';
+				sink = ltn12.sink.file(io.open(filename,'wb'));
+			}
+		)
+		if not b then return b,s end
+		f,err = io.open(filename,'rb')
+	end
+	if not f then
+		return nil,"Could not open manifest file: " .. err
+	end
+
+	local man = f:read('*a')
+	f:close()
+
+	local manifest = {}
+	for name,hash in man:gmatch('(.-)\r?\n(%x+)\r?\n') do
+		manifest[name] = hash
+	end
+	return manifest
+end
+
+local function unzip(url,dir)
+	local zip = require 'zip'
+	local http = require 'socket.http'
+	local ltn12 = require 'ltn12'
+	local ztmp = os.tmpname()
+
+	local b,s = filter(
+		"Failed to get file `" .. url .. "`",
+		http.request{
+			url = url;
+			sink = ltn12.sink.file(io.open(ztmp,'wb'));
+		}
+	)
+	if not b then return b,s end
+
+	local zipfile,err = zip.open(ztmp)
+	if not zipfile then
+		return nil,"Could not open file `" .. url .. "`: " .. err
+	end
+	for data in zipfile:files() do
+		local filename = data.filename
+		-- If file is not a directory
+		if filename:sub(-1,-1) ~= '/' then
+			-- Copy file to given folder
+			local zfile,err = zipfile:open(filename)
+			if not zfile then
+				return nil,"Could not unzip `" .. filename .. "`: " .. err
 			end
+			local file,err = dopen(path(dir,filename),'wb')
+			if not file then
+				zfile:close()
+				return nil,"Could not open `" .. path(dir,filename) .. "`: " .. err
+			end
+
+			file:write(zfile:read('*a'))
+			file:flush()
+			file:close()
+			zfile:close()
 		end
 	end
-	return nil,'could not find installation'
+	zipfile:close()
+	return true
 end
 
--- Get data from the user's Roblox installation
-local function getLocalSource(rbxPlayerDir,rbxStudioDir)
-	local rbxPlayerDir = rbxPlayerDir --or getRobloxDir('player')
-	if not rbxPlayerDir then
-		return nil,'Roblox player not installed'
+return function(verPlayer,verStudio)
+	local lfs = require 'lfs'
+	local http = require 'socket.http'
+
+	local s,err = mkdir(tmpDir)
+	if not s then
+		return s,"Could not create temporary directory: " .. err
 	end
 
-	local rbxStudioDir = rbxStudioDir --or getRobloxDir('studio')
-	if not rbxStudioDir then
-		return nil,'Roblox studio not installed'
+	if not verPlayer then
+		local b,s = filter(
+			"Failed to get latest player version",
+			http.request(setupURL .. 'version')
+		)
+		if not b then return b,s end
+		verPlayer = b
 	end
 
-	-- get reflection metadata
-	local rmd do
-		local a = io.open(path(rbxStudioDir,'ReflectionMetadata.xml'),'r')
-		if not a then
-			return nil,'could not find ReflectionMetadata in studio installation'
+	local dirPlayer = path(tmpDir,verPlayer)
+
+	if not exists(dirPlayer) then
+		local s,err = mkdir(dirPlayer)
+		if not s then
+			return s,"Could not create player directory: " .. err
 		end
-		local b = io.open(path(rbxPlayerDir,'ReflectionMetadata.xml'),'w')
-		rmd = a:read('*a')
-		-- copy to player folder for API dump
-		b:write(rmd)
+
+		-- AppSettings must be created manually
+		local app,err = io.open(path(dirPlayer,'AppSettings.xml'),'w')
+		if not app then
+			return app,"Could not open AppSettings.xml for writing: " .. err
+		end
+		app:write([[
+<?xml version="1.0" encoding="UTF-8"?>
+<Settings>
+	<ContentFolder>content</ContentFolder>
+	<BaseUrl>http://www.]] .. baseURL .. [[</BaseUrl>
+</Settings>]])
+		app:flush()
+		app:close()
+
+		-- Content directory is required by the exe
+		mkdir(path(dirPlayer,'content'))
+		if not s then
+			return s,"Could not create content directory: " .. err
+		end
+
+		local zips = {
+			{setupURL .. verPlayer .. '-RobloxApp.zip',dirPlayer};
+			{setupURL .. verPlayer .. '-Libraries.zip',dirPlayer};
+			{setupURL .. verPlayer .. '-redist.zip',dirPlayer};
+		}
+		for i = 1,#zips do
+			local s,err = unzip(zips[i][1],zips[i][2])
+			if not s then return s,err end
+		end
+	end
+
+	if not exists(path(dirPlayer,'ReflectionMetadata.xml')) then
+		if not verStudio then
+			local b,s = filter(
+				"Failed to get latest studio version",
+				http.request(setupURL .. 'version')
+			)
+			if not b then return b,s end
+			verStudio = b
+		end
+
+		local dirStudio = path(tmpDir,verStudio)
+		if not exists(dirStudio) then
+			local s,err = mkdir(dirStudio)
+			if not s then
+				return s,"Could not create studio directory: " .. err
+			end
+			local s,err = unzip(setupURL .. verStudio .. '-RobloxStudio.zip',dirStudio)
+			if not s then return s,err end
+		end
+
+		local a,err = io.open(path(dirStudio,'ReflectionMetadata.xml'),'rb')
+		if not a then
+			return nil,"Could not open ReflectionMetadata for reading: " .. err
+		end
+		local b,err = io.open(path(dirPlayer,'ReflectionMetadata.xml'),'wb')
+		if not b then
+			a:close()
+			return nil,"Could not open ReflectionMetadata for writing: " .. err
+		end
+		b:write(a:read('*a'))
 		b:flush()
 		a:close()
 		b:close()
 	end
 
-	-- dump API
-	local apiDump do
-		local lfs = require 'lfs'
+	local apiDump,exec do
+		local command = {
+			{[[RobloxPlayerBeta.exe]],[[--API]],dumpName};
+			{[[RobloxPlayer.exe]],[[-API]],dumpName};
+			{[[RobloxApp.exe]],[[-API]],dumpName};
+		}
+
+		local manifest,err = readManifest(verPlayer)
+		if not manifest then return manifest,err end
+
 		local dir = lfs.currentdir()
-		lfs.chdir(rbxPlayerDir)
-		if os.execute('RobloxPlayerBeta --API api.dmp') ~= 0 then
-			lfs.chdir(dir)
-			return nil,'failed to dump API'
+		lfs.chdir(dirPlayer)
+		for i = 1,#command do
+			if manifest[command[i][1]] then
+				local cmd = table.concat(command[i],' ')
+				if os.execute(cmd) == 0 then
+					exec = command[i][1]
+					break
+				end
+			end
 		end
-		local f = io.open('api.dmp','r')
+
+		local f = io.open(dumpName,'rb')
 		if not f then
 			lfs.chdir(dir)
-			return nil,'failed to find API dump'
+			return nil,"Could not get API dump"
 		end
+
 		apiDump = f:read('*a')
 		f:close()
 		os.remove('api.dmp')
 		lfs.chdir(dir)
+	end
+
+	local rmd do
+		local f,err = io.open(path(dirPlayer,'ReflectionMetadata.xml'),'rb')
+		if not f then
+			return f,"Could not open ReflectionMetadata: " .. err
+		end
+		rmd = f:read('*a')
+		f:close()
 	end
 
 	local explorerIndex = {}
@@ -151,151 +326,5 @@ local function getLocalSource(rbxPlayerDir,rbxStudioDir)
 		end
 	end
 
-	return apiDump, explorerIndex, path(rbxPlayerDir,'RobloxPlayerBeta.exe')
-end
-
---[[
-Files required to successfully dump API:
-	RobloxPlayerBeta.exe
-	AppSettings.xml
-	boost.dll
-	fmodex.dll
-	Log.dll
-	OgreMain.dll
-	tbb.dll
-	MSVCP110.dll
-	MSVCR110.dll
-	content (directory)
-	ReflectionMetadata.xml
-
-Server:
-	http://setup.roblox.com
-
-Version hashes:
-	versionPlayer: /version
-	versionStudio: /versionQTStudio
-
-Archives:
-	/version-<versionPlayer>-RobloxApp.zip
-	/version-<versionPlayer>-Libraries.zip
-	/version-<versionPlayer>-redist.zip
-	/version-<versionStudio>-RobloxStudio.zip
-
-	Each file is usually a couple MB in size, hence why this is the slowest
-	method.
-
-Manual:
-	AppSettings.xml
-		<?xml version="1.0" encoding="UTF-8"?>
-		<Settings>
-			<ContentFolder>content</ContentFolder>
-			<BaseUrl>http://www.roblox.com</BaseUrl>
-		</Settings>
-]]
-
--- Get data directly from install server
-local function getWebsiteSource(versionPlayer, versionStudio)
-	local lfs = require 'lfs'
-	local http = require 'socket.http'
-
-	-- Base domain. Might be useful for fetching from test sites.
-	local base = 'roblox.com'
-
-	-- Temp directory for downloaded files.
-	local tmp = path(os.getenv('TEMP'),'lua-get-cache/')
-	lfs.mkdir(tmp)
-
-	-- Get latest version hashes of player and studio.
-	versionPlayer = versionPlayer or http.request('http://setup.' .. base .. '/version')
-	versionStudio = versionStudio or http.request('http://setup.' .. base .. '/versionQTStudio')
-
-	local playerDir = path(tmp,versionPlayer)
-	local studioDir = path(tmp,versionStudio)
-
-	-- zip file name; unzip location
-	local zips = {}
-
-	local function exists(file)
-		return not not lfs.attributes(file)
-	end
-
-	-- If player needs updating
-	if not exists(playerDir) then
-		lfs.mkdir(playerDir)
-
-		-- AppSettings must be created manually
-		local app = io.open(path(playerDir,'AppSettings.xml'),'w')
-		app:write([[
-<?xml version="1.0" encoding="UTF-8"?>
-<Settings>
-	<ContentFolder>content</ContentFolder>
-	<BaseUrl>http://www.]] .. base .. [[</BaseUrl>
-</Settings>]])
-		app:flush()
-		app:close()
-
-		-- Content directory is required by the exe
-		lfs.mkdir(path(playerDir,'content'))
-
-		zips[#zips+1] = {versionPlayer .. '-RobloxApp.zip', playerDir}
-		zips[#zips+1] = {versionPlayer .. '-Libraries.zip', playerDir}
-		zips[#zips+1] = {versionPlayer .. '-redist.zip', playerDir}
-	end
-
-	-- If studio needs updating
-	if not exists(studioDir) then
-		lfs.mkdir(studioDir)
-		zips[#zips+1] = {versionStudio .. '-RobloxStudio.zip', studioDir};
-	end
-
-	if #zips > 0 then
-		local zip = require 'zip'
-		-- Temp zip file location
-		local ztmp = os.tmpname()
-
-		-- Get any files that need updating
-		for i = 1,#zips do
-			local zipn = zips[i][1]
-			local dir = zips[i][2]
-
-			-- Request the current zip file
-			http.request{
-				url = 'http://setup.' .. base .. '/' .. zipn;
-				sink = ltn12.sink.file(io.open(ztmp,'wb'));
-			}
-
-			-- Unzip
-			local zipfile = zip.open(ztmp)
-			if not zipfile then
-				return nil,'failed to get file `' .. zipn .. '`'
-			end
-			for data in zipfile:files() do
-				local filename = data.filename
-				if filename:sub(-1,-1) ~= '/' then
-				-- If file is not a directory
-					-- Copy file to given folder
-					local zfile = assert(zipfile:open(filename))
-					local file = assert(dopen(path(dir,filename),'wb'))
-					file:write(zfile:read('*a'))
-					file:flush()
-					file:close()
-					zfile:close()
-				end
-			end
-			zipfile:close()
-		end
-		-- remote temp zip file
-		os.remove(ztmp)
-	end
-
-	-- Now local source can properly handle the files
-	return getLocalSource(playerDir,studioDir)
-end
-
-return function(playerVersion,studioVersion)
-	local data = {getWebsiteSource(playerVersion,studioVersion)}
-	if data[1] == nil then
-		error(data[2],2)
-	end
-	return unpack(data)
+	return apiDump,explorerIndex,path(dirPlayer,exec)
 end
