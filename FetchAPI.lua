@@ -44,6 +44,17 @@ Returns three values:
 		'version-19c5d0ac8e9b47c4',
 		'version-e8936cd10a7748e5'
 	)
+
+## Dependencies
+
+- LuaFileSystem
+- LuaSocket
+- LuaZip
+
+## More Info
+
+https://github.com/Anaminus/roblox-api-dump
+
 ]]
 
 -- Combines arguments into a path, and normalizes
