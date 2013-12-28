@@ -135,23 +135,23 @@ return function(a,b)
 
 	function compare.Class(a,b)
 		if b.Superclass ~= a.Superclass then
-			diffs[#diffs+1] = {0,a,'Superclass',b.Superclass}
+			diffs[#diffs+1] = {0,'Superclass',a,b.Superclass}
 		end
 	end
 
 	function compare.Property(a,b)
 		if b.ValueType ~= a.ValueType then
-			diffs[#diffs+1] = {0,a,'ValueType',b.ValueType}
+			diffs[#diffs+1] = {0,'ValueType',a,b.ValueType}
 		end
 	end
 
 	function compare.Function(a,b)
 		if b.ReturnType ~= a.ReturnType then
-			diffs[#diffs+1] = {0,a,'ReturnType',b.ReturnType}
+			diffs[#diffs+1] = {0,'ReturnType',a,b.ReturnType}
 		end
 		local d = argDiff(a.Arguments,b.Arguments)
 		if #d > 0 then
-			diffs[#diffs+1] = {0,a,'Arguments',d}
+			diffs[#diffs+1] = {0,'Arguments',a,d}
 		end
 	end
 
@@ -162,7 +162,7 @@ return function(a,b)
 	function compare.Event(a,b)
 		local d = argDiff(a.Arguments,b.Arguments)
 		if #d > 0 then
-			diffs[#diffs+1] = {0,a,'Arguments',d}
+			diffs[#diffs+1] = {0,'Arguments',a,d}
 		end
 	end
 
@@ -172,7 +172,7 @@ return function(a,b)
 
 	function compare.EnumItem(a,b)
 		if a.Value ~= b.Value then
-			diffs[#diffs+1] = {0,a,'Value',b.Value}
+			diffs[#diffs+1] = {0,'Value',a,b.Value}
 		end
 	end
 
@@ -195,11 +195,11 @@ return function(a,b)
 				addClass[item.Name] = list
 				-- Add the difference right now. Since the member list is
 				-- referenced, it will be populated later.
-				diffs[#diffs+1] = {1,item,'Class',list}
+				diffs[#diffs+1] = {1,'Class',item,list}
 			elseif item.type == 'Enum' then
 				local list = {}
 				addEnum[item.Name] = list
-				diffs[#diffs+1] = {1,item,'Enum',list}
+				diffs[#diffs+1] = {1,'Enum',item,list}
 			end
 		end
 	end
@@ -208,11 +208,11 @@ return function(a,b)
 			if item.type == 'Class' then
 				local list = {}
 				delClass[item.Name] = list
-				diffs[#diffs+1] = {-1,item,'Class',list}
+				diffs[#diffs+1] = {-1,'Class',item,list}
 			elseif item.type == 'Enum' then
 				local list = {}
 				delEnum[item.Name] = list
-				diffs[#diffs+1] = {-1,item,'Enum',list}
+				diffs[#diffs+1] = {-1,'Enum',item,list}
 			end
 		end
 	end
@@ -240,7 +240,7 @@ return function(a,b)
 					if secTag[tag] then
 						secAdd = tag
 					else
-						diffs[#diffs+1] = {1,aitem,'Tag',tag}
+						diffs[#diffs+1] = {1,'Tag',aitem,tag}
 					end
 				end
 			end
@@ -249,14 +249,14 @@ return function(a,b)
 					if secTag[tag] then
 						secRem = tag
 					else
-						diffs[#diffs+1] = {-1,aitem,'Tag',tag}
+						diffs[#diffs+1] = {-1,'Tag',aitem,tag}
 					end
 				end
 			end
 			if secAdd or secRem then
 				-- secAdd or secRem may be nil, which can be interpreted as no
 				-- security
-				diffs[#diffs+1] = {0,aitem,'Security',secRem,secAdd}
+				diffs[#diffs+1] = {0,'Security',aitem,secRem,secAdd}
 			end
 		else
 			-- Item does not exist in `a`, which means it was added.
@@ -271,7 +271,7 @@ return function(a,b)
 				else
 					-- If not, then the member is an addition to an existing
 					-- class.
-					diffs[#diffs+1] = {1,item,'Item'}
+					diffs[#diffs+1] = {1,'Item',item}
 				end
 			elseif item.type == 'EnumItem' then
 				-- Same thing as members, but for enumitems.
@@ -279,11 +279,11 @@ return function(a,b)
 				if list then
 					list[#list+1] = item
 				else
-					diffs[#diffs+1] = {1,item,'Item'}
+					diffs[#diffs+1] = {1,'Item',item}
 				end
 			elseif item.type ~= 'Class' and item.type ~= 'Enum' then
 				-- Classes and Enum were already added to the diff list.
-				diffs[#diffs+1] = {1,item,'Item'}
+				diffs[#diffs+1] = {1,'Item',item}
 			end
 		end
 	end
@@ -295,17 +295,17 @@ return function(a,b)
 				if list then
 					list[#list+1] = item
 				else
-					diffs[#diffs+1] = {-1,item,'Item'}
+					diffs[#diffs+1] = {-1,'Item',item}
 				end
 			elseif item.type == 'EnumItem' then
 				local list = delEnum[item.Enum]
 				if list then
 					list[#list+1] = item
 				else
-					diffs[#diffs+1] = {-1,item,'Item'}
+					diffs[#diffs+1] = {-1,'Item',item}
 				end
 			elseif item.type ~= 'Class' and item.type ~= 'Enum' then
-				diffs[#diffs+1] = {-1,item,'Item'}
+				diffs[#diffs+1] = {-1,'Item',item}
 			end
 		end
 	end
@@ -327,10 +327,10 @@ return function(a,b)
 	-- then item type, then item name.
 	table.sort(diffs,function(a,b)
 		if a[1] == b[1] then
-			if a[2].type == b[2].type then
-				return itemName(a[2]) < itemName(b[2])
+			if a[3].type == b[3].type then
+				return itemName(a[3]) < itemName(b[3])
 			else
-				return typeSort[a[2].type] < typeSort[b[2].type]
+				return typeSort[a[3].type] < typeSort[b[3].type]
 			end
 		else
 			return a[1] > b[1]
