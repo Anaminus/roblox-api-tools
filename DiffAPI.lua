@@ -16,6 +16,11 @@ ParseAPI or LexAPI.
 
 	local diff = DiffAPI(oldDump, newDump)
 
+DiffAPI returns a table containing the differences between the two versions.
+The format of this table is described here:
+
+https://github.com/Anaminus/roblox-api-dump/wiki/API-diff-format
+
 ## More Info
 
 https://github.com/Anaminus/roblox-api-dump
