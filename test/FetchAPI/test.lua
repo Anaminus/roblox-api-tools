@@ -1,3 +1,5 @@
+package.path = package.path .. ';../../?.lua'
+
 local versions = {
 	{'version-87de5333d4254860'}; -- RobloxApp; first (known) version with API dump
 	{'version-38293b7e060d4866'}; -- Switches to RobloxPlayer
@@ -36,18 +38,17 @@ local function test(v)
 
 	print("Testing",verPlayer,verStudio)
 
-	local aDump = read(verPlayer .. '.dmp')
+	local aDump = read(verPlayer .. '.rbxapi')
 	local aIndex = require(verPlayer)
-	local aExec = verPlayer .. '/' .. read(verPlayer .. '.txt')
 
-	local bDump,bIndex,bExec = FetchAPI(verPlayer,verStudio)
+	local bDump,bIndex,bDir = FetchAPI(verPlayer,verStudio)
 	if not bDump then
 		print("FetchAPI failed:",bIndex)
 	end
 
 	assert(bDump==aDump,"APIDump test failed: Dump does not match")
 	assert(teq(bIndex,aIndex),"ExplorerIndex test failed: ExplorerIndex table contents do not match")
-	assert(bExec:match('.*/(.+)$')==aExec:match('.*/(.+)$'),"Exec test failed: Executable names do not match")
+	assert(#bDir > 0,"Directory test failed: Path is empty")
 	print()
 end
 
