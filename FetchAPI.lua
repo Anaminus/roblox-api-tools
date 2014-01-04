@@ -24,7 +24,7 @@ supply the version hash of a related studio build as a second argument.
 Returns three values:
 - An unparsed API dump string
 - A table of class names and their corresponding explorer image indexes
-- The path to the ROBLOX client executable that was used to get the data
+- The path to the directory where the ROBLOX client executable is located
 
 ## Example
 
@@ -337,5 +337,5 @@ return function(verPlayer,verStudio)
 		end
 	end
 
-	return apiDump,explorerIndex,path(dirPlayer,exec)
+	return apiDump,explorerIndex,dirPlayer
 end
