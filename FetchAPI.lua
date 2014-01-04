@@ -12,7 +12,7 @@ string that takes the form of:
 
 	version-<hash>
 
-Where `<hash>` is some 16-digit hexidecimal number.
+Where `<hash>` is some 16-digit hexadecimal number.
 
 If no arguments are passed, FetchAPI will retrieve data for the latest version
 of the ROBLOX client.
@@ -31,16 +31,16 @@ Returns three values:
 	local FetchAPI = require 'FetchAPI'
 
 	-- RobloxApp build
-	local dump, explorerIndex, exe = FetchAPI('version-87de5333d4254860')
+	local dump, explorerIndex, dir = FetchAPI('version-87de5333d4254860')
 
 	-- RobloxPlayer build
-	local dump, explorerIndex, exe = FetchAPI('version-38293b7e060d4866')
+	local dump, explorerIndex, dir = FetchAPI('version-38293b7e060d4866')
 
 	-- RobloxPlayerBeta build
-	local dump, explorerIndex, exe = FetchAPI('version-12cd4783f01a48cf')
+	local dump, explorerIndex, dir = FetchAPI('version-12cd4783f01a48cf')
 
 	-- Studio-required build
-	local dump, explorerIndex, exe = FetchAPI(
+	local dump, explorerIndex, dir = FetchAPI(
 		'version-19c5d0ac8e9b47c4',
 		'version-e8936cd10a7748e5'
 	)
@@ -69,8 +69,8 @@ end
 
 local baseURL = 'roblox.com'
 local setupURL = 'http://setup.' .. baseURL .. '/'
-local tmpDir = path(os.getenv('TEMP'),'lua-get-cache/')
-local dumpName = 'api.dmp'
+local tmpDir = path(os.getenv('TEMP'),'roblox-build-cache/')
+local dumpName = 'dump.rbxapi'
 
 local function mkdir(...)
 	local lfs = require 'lfs'
@@ -108,7 +108,29 @@ local function exists(filename)
 	return not not lfs.attributes(filename)
 end
 
+local function isempty(dir)
+	local c = 0
+	for d in lfs.dir(dir) do
+		if d ~= '..' and d ~= '.' then
+			c = c + 1
+		end
+	end
+	return c == 0
+end
 
+-- verify whether the content of a build folder is complete
+local function validBuild(dir)
+	if not exists(dir) then
+		return false
+	end
+	if isempty(dir) then
+		return false
+	end
+	if exists(path(dir,'INVALID')) then
+		return false
+	end
+	return true
+end
 
 local function filter(msg,b,s,h,l)
 	if b == nil then
@@ -214,11 +236,17 @@ return function(verPlayer,verStudio)
 
 	local dirPlayer = path(tmpDir,verPlayer)
 
-	if not exists(dirPlayer) then
+	if not validBuild(dirPlayer) then
 		local s,err = mkdir(dirPlayer)
 		if not s then
 			return s,"Could not create player directory: " .. err
 		end
+		s,err = io.open(path(dirPlayer,'INVALID'),'wb')
+		if not s then
+			return s,"Could not create placeholder file: " .. err
+		end
+		s:close()
+
 
 		-- AppSettings must be created manually
 		local app,err = io.open(path(dirPlayer,'AppSettings.xml'),'w')
@@ -249,6 +277,11 @@ return function(verPlayer,verStudio)
 			local s,err = unzip(zips[i][1],zips[i][2])
 			if not s then return s,err end
 		end
+
+		s,err = os.remove(path(dirPlayer,'INVALID'))
+		if not s then
+			return s,"Could not remove placeholder file: " .. err
+		end
 	end
 
 	if not exists(path(dirPlayer,'ReflectionMetadata.xml')) then
@@ -262,13 +295,24 @@ return function(verPlayer,verStudio)
 		end
 
 		local dirStudio = path(tmpDir,verStudio)
-		if not exists(dirStudio) then
+		if not validBuild(dirStudio) then
 			local s,err = mkdir(dirStudio)
 			if not s then
 				return s,"Could not create studio directory: " .. err
 			end
-			local s,err = unzip(setupURL .. verStudio .. '-RobloxStudio.zip',dirStudio)
+			s,err = io.open(path(dirStudio,'INVALID'),'wb')
+			if not s then
+				return s,"Could not create placeholder file: " .. err
+			end
+			s:close()
+
+			s,err = unzip(setupURL .. verStudio .. '-RobloxStudio.zip',dirStudio)
 			if not s then return s,err end
+
+			s,err = os.remove(path(dirStudio,'INVALID'))
+			if not s then
+				return s,"Could not remove placeholder file: " .. err
+			end
 		end
 
 		local a,err = io.open(path(dirStudio,'ReflectionMetadata.xml'),'rb')
@@ -286,38 +330,37 @@ return function(verPlayer,verStudio)
 		b:close()
 	end
 
-	local apiDump,exec do
-		local command = {
-			{[[RobloxPlayerBeta.exe]],[[--API]],dumpName};
-			{[[RobloxPlayer.exe]],[[-API]],dumpName};
-			{[[RobloxApp.exe]],[[-API]],dumpName};
-		}
+	local apiDump do
+		if not exists(path(dirPlayer,dumpName)) then
+			local command = {
+				{[[RobloxPlayerBeta.exe]],[[--API]],dumpName};
+				{[[RobloxPlayer.exe]],[[-API]],dumpName};
+				{[[RobloxApp.exe]],[[-API]],dumpName};
+			}
 
-		local manifest,err = readManifest(verPlayer)
-		if not manifest then return manifest,err end
+			local manifest,err = readManifest(verPlayer)
+			if not manifest then return manifest,err end
 
-		local dir = lfs.currentdir()
-		lfs.chdir(dirPlayer)
-		for i = 1,#command do
-			if manifest[command[i][1]] then
-				local cmd = table.concat(command[i],' ')
-				if os.execute(cmd) == 0 then
-					exec = command[i][1]
-					break
+			local dir = lfs.currentdir()
+			lfs.chdir(dirPlayer)
+			for i = 1,#command do
+				if manifest[command[i][1]] then
+					local cmd = table.concat(command[i],' ')
+					if os.execute(cmd) == 0 then
+						break
+					end
 				end
 			end
+			lfs.chdir(dir)
 		end
 
-		local f = io.open(dumpName,'rb')
+		local f = io.open(path(dirPlayer,dumpName),'rb')
 		if not f then
-			lfs.chdir(dir)
 			return nil,"Could not get API dump"
 		end
 
 		apiDump = f:read('*a')
 		f:close()
-		os.remove('api.dmp')
-		lfs.chdir(dir)
 	end
 
 	local rmd do
