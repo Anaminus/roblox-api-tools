@@ -108,7 +108,13 @@ local function exists(filename)
 	return not not lfs.attributes(filename)
 end
 
-local function isempty(dir)
+-- returns true if file does not exist
+local function fileempty(filename)
+	local size = lfs.attributes(filename,'size')
+	return not size or size == 0
+end
+
+local function dirempty(dir)
 	local c = 0
 	for d in lfs.dir(dir) do
 		if d ~= '..' and d ~= '.' then
@@ -123,7 +129,7 @@ local function validBuild(dir)
 	if not exists(dir) then
 		return false
 	end
-	if isempty(dir) then
+	if dirempty(dir) then
 		return false
 	end
 	if exists(path(dir,'INVALID')) then
@@ -284,7 +290,25 @@ return function(verPlayer,verStudio)
 		end
 	end
 
-	if not exists(path(dirPlayer,'ReflectionMetadata.xml')) then
+	-- Indicates whether the given studio version is different from the cached
+	-- results.
+	local updateStudio do
+		local f,err = io.open(path(dirPlayer,'STUDIO'),'rb')
+		-- If the STUDIO file does not exist, then the player may not require
+		-- a studio build. If it turns out that it does, then the STUDIO file
+		-- will be created, indicating that the player requires one. If not,
+		-- then updateStudio will always be false.
+		if f then
+			-- If updateStudio is true, then files will be updated whether they
+			-- exist or not.
+			updateStudio = verStudio ~= f:read('*a')
+			f:close()
+		else
+			updateStudio = false
+		end
+	end
+
+	if fileempty(path(dirPlayer,'ReflectionMetadata.xml')) or updateStudio then
 		if not verStudio then
 			local b,s = filter(
 				"Failed to get latest studio version",
@@ -319,6 +343,14 @@ return function(verPlayer,verStudio)
 		if not a then
 			return nil,"Could not open ReflectionMetadata for reading: " .. err
 		end
+
+		local f = io.open(path(dirPlayer,'STUDIO'),'wb')
+		if f then
+			f:write(verStudio)
+			f:flush()
+			f:close()
+		end
+
 		local b,err = io.open(path(dirPlayer,'ReflectionMetadata.xml'),'wb')
 		if not b then
 			a:close()
@@ -331,7 +363,7 @@ return function(verPlayer,verStudio)
 	end
 
 	local apiDump do
-		if not exists(path(dirPlayer,dumpName)) then
+		if fileempty(path(dirPlayer,dumpName)) or updateStudio then
 			local command = {
 				{[[RobloxPlayerBeta.exe]],[[--API]],dumpName};
 				{[[RobloxPlayer.exe]],[[-API]],dumpName};
