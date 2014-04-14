@@ -31,7 +31,7 @@ https://github.com/Anaminus/roblox-api-dump
 -- list.
 local function argDiff(a,b)
 	for i = 1,#a do
-		if a.Name ~= b.Name or a.Type ~= b.Type or a.Default ~= b.Default then
+		if a[i].Name ~= b[i].Name or a[i].Type ~= b[i].Type or a[i].Default ~= b[i].Default then
 			local copy = {}
 			for i = 1,#b do
 				local arg = b[i]
