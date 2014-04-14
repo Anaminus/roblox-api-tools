@@ -30,17 +30,28 @@ https://github.com/Anaminus/roblox-api-dump
 -- Check if two lists of arguments match. If not, return a copy of the newer
 -- list.
 local function argDiff(a,b)
-	for i = 1,#a do
-		if a[i].Name ~= b[i].Name or a[i].Type ~= b[i].Type or a[i].Default ~= b[i].Default then
-			local copy = {}
-			for i = 1,#b do
-				local arg = b[i]
-				copy[i] = {Type=arg.Type, Name=arg.Name, Default=arg.Default}
+	local equal = true
+	if #a ~= #b then
+		equal = false
+	else
+		for i = 1,#a do
+			if a[i].Name ~= b[i].Name or a[i].Type ~= b[i].Type or a[i].Default ~= b[i].Default then
+				equal = false
+				break
 			end
-			return copy
 		end
 	end
-	return nil
+
+	if not equal then
+		local copy = {}
+		for i = 1,#b do
+			local arg = b[i]
+			copy[i] = {Type=arg.Type, Name=arg.Name, Default=arg.Default}
+		end
+		return copy
+	else
+		return nil
+	end
 end
 
 -- Returns an immutable identifer for the given item.
