@@ -27,86 +27,20 @@ https://github.com/Anaminus/roblox-api-dump
 
 ]]
 
--- Return list of steps that turn one list of arguments into another.
+-- Check if two lists of arguments match. If not, return a copy of the newer
+-- list.
 local function argDiff(a,b)
-	local function equal(a,b)
-		return a.Name == b.Name
-		and a.Type == b.Type
-		and a.Default == b.Default
-	end
-
-	local function isin(v,t)
-		for i = 1,#t do
-			if equal(t[i],v) then
-				return i
-			end
-		end
-	end
-
-	do
-		local o = a
-		a = {}
-		for i = 1,#o do
-			a[i] = o[i]
-		end
-	end
-
-	local diffs = {}
-	if #b > #a then
-		while #a < #b do
+	for i = 1,#a do
+		if a.Name ~= b.Name or a.Type ~= b.Type or a.Default ~= b.Default then
+			local copy = {}
 			for i = 1,#b do
-				if not isin(b[i],a) then
-					-- insert
-					table.insert(a,i,b[i])
-					diffs[#diffs+1] = {1,i,b[i]}
-					break
-				end
+				local arg = b[i]
+				copy[i] = {Type=arg.Type, Name=arg.Name, Default=arg.Default}
 			end
-		end
-	elseif #b < #a then
-		while #a > #b do
-			for i = 1,#a do
-				if not isin(a[i],b) then
-					-- remove
-					table.remove(a,i)
-					diffs[#diffs+1] = {2,i}
-					break
-				end
-			end
+			return copy
 		end
 	end
-
-	local continue
-	repeat
-		continue = false
-		for i = 1,#a do
-			if not equal(a[i],b[i]) then
-				local j = isin(a[i],b)
-				if j then
-					-- swap
-					a[i],a[j] = a[j],a[i]
-					diffs[#diffs+1] = {3,i,j}
-					continue = true
-					break
-				else
-					local k = isin(b[i],a)
-					if k then
-						-- swap
-						a[i],a[k] = a[k],a[i]
-						diffs[#diffs+1] = {3,i,k}
-						continue = true
-						break
-					else
-						-- replace
-						a[i] = b[i]
-						diffs[#diffs+1] = {4,i,b[i]}
-					end
-				end
-			end
-		end
-	until not continue
-
-	return diffs
+	return nil
 end
 
 -- Returns an immutable identifer for the given item.
@@ -155,7 +89,7 @@ return function(a,b)
 			diffs[#diffs+1] = {0,'ReturnType',a,b.ReturnType}
 		end
 		local d = argDiff(a.Arguments,b.Arguments)
-		if #d > 0 then
+		if d then
 			diffs[#diffs+1] = {0,'Arguments',a,d}
 		end
 	end
@@ -166,7 +100,7 @@ return function(a,b)
 
 	function compare.Event(a,b)
 		local d = argDiff(a.Arguments,b.Arguments)
-		if #d > 0 then
+		if d then
 			diffs[#diffs+1] = {0,'Arguments',a,d}
 		end
 	end
