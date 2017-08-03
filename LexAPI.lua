@@ -19,7 +19,7 @@ table, so that it may be manipulated more easily.
 The LexAPI function expects a string, which is the contents of the dump
 file. It returns a table containing the parsed data. Here's an example:
 
-	local LexAPI = require 'LexAPI'
+    local LexAPI = require 'LexAPI'
 
 	local f = io.open('api.txt')
 	local data = f:read('*a')
@@ -251,28 +251,32 @@ return function(data)
 	local function parseTags()
 		local tags = {}
 		local s = i
-		local open = false
+		local depth = 0
 		while not is'\n' and not is'\r\n' do
 			if is'[' then
-				lnassert(not open,"unexpected tag opener",4)
-				open = true
+				depth = depth + 1
 				i = i + 1
-				s = i
+				if depth == 1 then
+					s = i
+				end
 			elseif is']' then
-				lnassert(open,"unexpected tag closer",4)
-				open = false
-				tags[data:sub(s,i-1)] = true
+				depth = depth - 1
+				lnassert(depth >= 0,"unexpected tag closer",4)
+				if depth == 0 then
+					local tag = data:sub(s,i-1):gsub("[a-zA-Z0-9_]+:%s%[(.+)%]","%1") -- Cut out the ScriptWriteRestricted stuff, since it's just an awkward convention for permission levels.
+					tags[tag] = true
+				end
 				i = i + 1
 				white()
 			elseif i > #data then
 				break
-			elseif not open then
+			elseif depth == 0 then
 				lnerror("unexpected character between tags",4)
 			else
 				i = i + 1
 			end
 		end
-		if open then
+		if depth ~= 0 then
 			lnerror("tag closer expected",4)
 		end
 		return tags
